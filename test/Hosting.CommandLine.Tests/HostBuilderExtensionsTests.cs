@@ -121,6 +121,6 @@ namespace McMaster.Extensions.Hosting.CommandLine.Tests
             private void OnExecute(CommandLineApplication<CaptureRemainingArgsCommand> app)
             {
             }
-        }        
+        }
     }
 }
