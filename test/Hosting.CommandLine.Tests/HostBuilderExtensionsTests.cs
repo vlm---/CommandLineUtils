@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using McMaster.Extensions.CommandLineUtils.Conventions;
 using McMaster.Extensions.Hosting.CommandLine.Tests.Utilities;
@@ -28,6 +30,16 @@ namespace McMaster.Extensions.Hosting.CommandLine.Tests
                     .RunCommandLineApplicationAsync<Return42Command>(new string[0])
                     .GetAwaiter()
                     .GetResult());
+        }
+
+        [Fact]
+        public async void TestRunOnSameThread()
+        {
+            var currentThreadId = Thread.CurrentThread.ManagedThreadId;
+            var executedThreadId = await new HostBuilder()
+                .ConfigureServices(collection => collection.AddSingleton<IConsole>(new TestConsole(_output)))
+                .RunCommandLineApplicationAsync<ReturnThreadIdCommand>(new string[0]);
+            Assert.Equal(currentThreadId, executedThreadId);
         }
 
         [Fact]
@@ -69,6 +81,14 @@ namespace McMaster.Extensions.Hosting.CommandLine.Tests
             }
         }
 
+        public class ReturnThreadIdCommand
+        {
+            private Task<int> OnExecuteAsync()
+            {
+                return Task.FromResult(Thread.CurrentThread.ManagedThreadId);
+            }
+        }
+
         public class Write42Command
         {
             private void OnExecute(CommandLineApplication<Write42Command> app)
@@ -101,6 +121,6 @@ namespace McMaster.Extensions.Hosting.CommandLine.Tests
             private void OnExecute(CommandLineApplication<CaptureRemainingArgsCommand> app)
             {
             }
-        }
+        }        
     }
 }
