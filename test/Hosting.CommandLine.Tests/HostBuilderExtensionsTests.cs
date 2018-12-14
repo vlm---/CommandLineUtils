@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
@@ -73,6 +74,31 @@ namespace McMaster.Extensions.Hosting.CommandLine.Tests
             Mock.Verify(convention);
         }
 
+        [Fact]
+        public void ItThrowsOnUnknownSubCommand()
+        {
+            var ex = Assert.Throws<UnrecognizedCommandParsingException>(
+                () => new HostBuilder()
+                    .ConfigureServices(collection => collection.AddSingleton<IConsole>(new TestConsole(_output)))
+                    .RunCommandLineApplicationAsync<ParentCommand>(new string[] {"return41"})
+                    .GetAwaiter()
+                    .GetResult());
+            Assert.Equal(new string[] {"return42"}, ex.NearestMatches);
+        }
+
+        [Fact]
+        public void ItRethrowsThrownExceptions()
+        {
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => new HostBuilder()
+                    .ConfigureServices(collection => collection.AddSingleton<IConsole>(new TestConsole(_output)))
+                    .RunCommandLineApplicationAsync<ThrowsExceptionCommand>(new string[0])
+                    .GetAwaiter()
+                    .GetResult());
+            Assert.Equal("A test", ex.Message);
+        }
+
+        [Command]
         public class Return42Command
         {
             private int OnExecute()
@@ -81,6 +107,7 @@ namespace McMaster.Extensions.Hosting.CommandLine.Tests
             }
         }
 
+        [Command]
         public class ReturnThreadIdCommand
         {
             private Task<int> OnExecuteAsync()
@@ -120,6 +147,21 @@ namespace McMaster.Extensions.Hosting.CommandLine.Tests
 
             private void OnExecute(CommandLineApplication<CaptureRemainingArgsCommand> app)
             {
+            }
+        }
+
+        [Command]
+        [Subcommand(typeof(Return42Command))]
+        class ParentCommand
+        {
+        }
+
+        [Command]
+        class ThrowsExceptionCommand
+        {
+            private int OnExecute()
+            {
+                throw new InvalidOperationException("A test");
             }
         }
     }
