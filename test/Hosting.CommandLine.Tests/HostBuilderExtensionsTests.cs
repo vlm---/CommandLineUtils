@@ -116,6 +116,7 @@ namespace McMaster.Extensions.Hosting.CommandLine.Tests
             }
         }
 
+        [Command]
         public class Write42Command
         {
             private void OnExecute(CommandLineApplication<Write42Command> app)
